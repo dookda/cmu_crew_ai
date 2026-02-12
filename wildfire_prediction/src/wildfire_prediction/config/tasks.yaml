@@ -1,0 +1,120 @@
+collect_and_validate_data:
+  description: >
+    Load the wildfire hotspot dataset from {data_path} for {province} province
+    covering years {start_year} to {end_year}. Perform comprehensive data quality
+    assessment including: checking for missing values in every column, detecting
+    outliers using the IQR method, verifying data types, computing summary
+    statistics (mean, std, min, max for all numeric columns), and generating
+    a data readiness score from 0-100.
+    Use the data_fetcher_tool with the csv_path argument set to "{data_path}".
+  expected_output: >
+    A data quality report that specifies: total number of rows, missing values
+    per column, basic statistics (mean, std, min, max) for all numeric columns,
+    outlier detection results using IQR method, and a data readiness score (0-100).
+    The report should be saved to output/data_quality_report.txt.
+  agent: data_collector
+
+analyze_and_engineer_features:
+  description: >
+    Using the validated dataset at {data_path}, perform feature engineering:
+    1. Analyze correlation matrix between all features and hotspot_count.
+    2. Analyze seasonal decomposition of the hotspot time series.
+    3. Create lag features for hotspot_count, ndvi_mean, and rainfall_mm at t-1, t-2, t-3.
+    4. Create rolling statistics: mean and std for rainfall_mm and temperature_c (window=3 months).
+    5. Create month indicator using sine/cosine encoding.
+    6. Create dry_season flag (1 if Dec-Apr, 0 otherwise).
+    7. Save the processed dataset as CSV.
+    8. Generate a correlation heatmap as PNG.
+    Use the data_processor_tool with the csv_path argument set to "{data_path}".
+  expected_output: >
+    A feature engineering report listing all created features, correlation analysis
+    results showing top correlated features with hotspot_count, seasonal patterns
+    discovered, and file paths for the processed CSV (output/processed_features.csv)
+    and correlation heatmap (output/correlation_heatmap.png).
+  agent: data_analyst
+  context:
+    - collect_and_validate_data
+
+train_and_evaluate_model:
+  description: >
+    Using the processed features dataset at output/processed_features.csv, train
+    and evaluate prediction models:
+    1. Split data temporally: 80% train, 20% test (by time order).
+    2. Normalize features with MinMaxScaler.
+    3. Create sequence data for LSTM with lookback = 6 months.
+    4. Train LSTM: Input → LSTM(64) → Dropout(0.2) → LSTM(32) → Dense(16) → Dense(1).
+    5. Train baseline models: Linear Regression and Random Forest.
+    6. Evaluate all models with: RMSE, MAE, R², NSE (Nash-Sutcliffe Efficiency).
+    7. Generate actual vs predicted comparison plot as PNG.
+    8. Save the trained LSTM model.
+    Use the ml_trainer_tool with the processed_csv_path argument set to "output/processed_features.csv".
+  expected_output: >
+    A model evaluation report containing a comparison table of all 3 models
+    (Linear Regression, Random Forest, LSTM) showing RMSE, MAE, R², and NSE metrics.
+    Include the file path to the prediction plot (output/prediction_plot.png),
+    and a recommendation for the best model with justification.
+  agent: ml_engineer
+  context:
+    - analyze_and_engineer_features
+
+generate_risk_maps:
+  description: >
+    Using the processed data at output/processed_features.csv, create visualizations:
+    1. A static time series plot showing hotspot count over time (matplotlib).
+    2. A monthly heatmap showing hotspot intensity by month × year.
+    3. An interactive HTML map using Folium centered on Northern Thailand
+       (lat=18.8, lon=99.0) showing fire risk for 9 provinces: Chiang Mai,
+       Chiang Rai, Lampang, Lamphun, Mae Hong Son, Nan, Phayao, Phrae, Uttaradit.
+       Use color-coded markers (green/yellow/orange/red) based on risk level,
+       with popup information for each province.
+    4. Save all outputs to the output/ directory.
+    Use the map_generator_tool with the processed_csv_path argument set to "output/processed_features.csv".
+  expected_output: >
+    A summary of all generated visualizations including file paths:
+    output/hotspot_timeseries.png, output/monthly_heatmap.png,
+    output/fire_risk_map.html. Include a description of what each map/chart shows.
+  agent: cartographer
+  context:
+    - train_and_evaluate_model
+
+write_research_report:
+  description: >
+    Write a comprehensive research report in English, in Markdown format, and save it
+    to output/research_report.md. The report should have the following structure:
+
+    Title: "LSTM-based Wildfire Hotspot Prediction in Northern Thailand: A Multi-Source Remote Sensing Approach"
+
+    1. Abstract (approximately 250 words): Summarize objectives, methods, and key results.
+    2. 1. Introduction: Discuss the wildfire problem in Northern Thailand, PM2.5 impacts,
+       and provide a brief literature review with relevant citations.
+    3. 2. Study Area: Describe Chiang Mai province — location, topography, climate.
+    4. 3. Data and Methods:
+       - 3.1 Data Sources (summary table of dataset)
+       - 3.2 Feature Engineering
+       - 3.3 LSTM Architecture (describe the architecture)
+       - 3.4 Baseline Models
+       - 3.5 Evaluation Metrics
+    5. 4. Results:
+       - 4.1 Exploratory Analysis (reference correlation heatmap)
+       - 4.2 Model Comparison (metrics table)
+       - 4.3 Prediction Performance (reference prediction plot)
+       - 4.4 Fire Risk Assessment (reference risk map)
+    6. 5. Discussion: Key findings, comparison with other studies, limitations.
+    7. 6. Conclusion: Summary and future research recommendations.
+    8. References: APA format citations.
+
+    Reference the output files from previous tasks: correlation_heatmap.png,
+    prediction_plot.png, fire_risk_map.html, monthly_heatmap.png.
+
+    Use the report_formatting_tool to validate and save the report. Pass the complete
+    report Markdown content as the report_content argument.
+  expected_output: >
+    A complete research report in Markdown format saved at output/research_report.md,
+    with all required sections, proper academic structure, figure/table references
+    from previous tasks, and APA-formatted references.
+  agent: report_writer
+  context:
+    - collect_and_validate_data
+    - analyze_and_engineer_features
+    - train_and_evaluate_model
+    - generate_risk_maps
