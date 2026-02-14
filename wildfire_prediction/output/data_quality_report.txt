@@ -1,0 +1,52 @@
+============================================================
+DATA QUALITY REPORT
+============================================================
+File: data/sample_hotspot_data.csv
+Rows: 120
+Columns: 10
+Date range: 2015-01-01 00:00:00 to 2024-12-01 00:00:00
+Province(s): Chiang Mai
+
+--- Missing Values ---
+  date: 0
+  province: 0
+  hotspot_count: 0
+  ndvi_mean: 0
+  rainfall_mm: 0
+  temperature_c: 0
+  soil_moisture: 0
+  relative_humidity: 0
+  wind_speed_kmh: 0
+  lst_day_c: 0
+
+--- Data Types ---
+  date: datetime64[us]
+  province: str
+  hotspot_count: int64
+  ndvi_mean: float64
+  rainfall_mm: float64
+  temperature_c: float64
+  soil_moisture: float64
+  relative_humidity: float64
+  wind_speed_kmh: float64
+  lst_day_c: float64
+
+--- Descriptive Statistics ---
+                   count        mean         std      min        25%       50%       75%       max  missing
+hotspot_count      120.0  151.350000  223.656386   0.0000   0.750000   39.5000  172.7500  800.0000        0
+ndvi_mean          120.0    0.493899    0.179054   0.2129   0.322725    0.4978    0.6723    0.7789        0
+rainfall_mm        120.0  121.223333  102.310544   0.0000  26.275000  102.7500  204.6750  342.7000        0
+temperature_c      120.0   26.685000    3.323981  20.0000  24.875000   26.9000   28.6250   34.8000        0
+soil_moisture      120.0    0.226467    0.127928   0.0500   0.120775    0.2021    0.3452    0.4500        0
+relative_humidity  120.0   59.302500   17.041612  30.0000  43.125000   58.7500   74.3500   85.0000        0
+wind_speed_kmh     120.0    7.779167    2.621081   3.0000   5.900000    7.8000    9.2250   14.1000        0
+lst_day_c          120.0   32.494167    4.406113  25.4000  29.150000   31.5500   35.3000   42.6000        0
+
+--- Outlier Detection (IQR Method) ---
+  hotspot_count: 21 outliers (range: -257.25 - 430.75)
+  temperature_c: 1 outliers (range: 19.25 - 34.25)
+
+Duplicate rows: 0
+
+Data Readiness Score: 56/100
+============================================================

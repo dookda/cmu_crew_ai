@@ -1,6 +1,6 @@
 """Wildfire Prediction Crew assembly using CrewAI @CrewBase decorator pattern."""
 
-from crewai import Agent, Crew, Process, Task
+from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
 from wildfire_prediction.tools.data_fetcher import data_fetcher_tool
@@ -89,7 +89,5 @@ class WildfirePredictionCrew:
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
-            memory=True,
-            planning=True,
             verbose=True,
         )
