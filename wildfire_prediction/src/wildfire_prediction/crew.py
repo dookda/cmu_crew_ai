@@ -1,4 +1,4 @@
-"""Wildfire Prediction Crew assembly using CrewAI @CrewBase decorator pattern."""
+"""ประกอบทีม Crew สำหรับพยากรณ์ไฟป่า ใช้ CrewAI @CrewBase decorator pattern"""
 
 from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
@@ -12,14 +12,16 @@ from wildfire_prediction.tools.report_tool import report_formatting_tool
 
 @CrewBase
 class WildfirePredictionCrew:
-    """Wildfire Prediction Crew — sequential multi-agent pipeline."""
+    """ทีมพยากรณ์ไฟป่า — สายพาน multi-agent แบบ sequential"""
 
     agents_config = "config/agents.yaml"
     tasks_config = "config/tasks.yaml"
 
+    # ===== กำหนด Agents (ตัวแทน AI) =====
+
     @agent
     def data_collector(self) -> Agent:
-        """Remote Sensing Data Specialist agent."""
+        """Agent ผู้เชี่ยวชาญข้อมูลดาวเทียม — โหลดและตรวจสอบคุณภาพข้อมูล"""
         return Agent(
             config=self.agents_config["data_collector"],
             tools=[data_fetcher_tool],
@@ -27,7 +29,7 @@ class WildfirePredictionCrew:
 
     @agent
     def data_analyst(self) -> Agent:
-        """Geospatial Data Analyst agent."""
+        """Agent นักวิเคราะห์ข้อมูลเชิงพื้นที่ — สร้าง features และวิเคราะห์ patterns"""
         return Agent(
             config=self.agents_config["data_analyst"],
             tools=[data_processor_tool],
@@ -35,7 +37,7 @@ class WildfirePredictionCrew:
 
     @agent
     def ml_engineer(self) -> Agent:
-        """Deep Learning Engineer agent."""
+        """Agent วิศวกร Deep Learning — ฝึกโมเดล LSTM และ baseline"""
         return Agent(
             config=self.agents_config["ml_engineer"],
             tools=[ml_trainer_tool],
@@ -43,7 +45,7 @@ class WildfirePredictionCrew:
 
     @agent
     def cartographer(self) -> Agent:
-        """GIS Cartographer agent."""
+        """Agent นักทำแผนที่ GIS — สร้างแผนที่ความเสี่ยงไฟป่า"""
         return Agent(
             config=self.agents_config["cartographer"],
             tools=[map_generator_tool],
@@ -51,43 +53,47 @@ class WildfirePredictionCrew:
 
     @agent
     def report_writer(self) -> Agent:
-        """Academic Research Writer agent."""
+        """Agent นักเขียนงานวิจัย — เขียนรายงานวิจัยฉบับสมบูรณ์"""
         return Agent(
             config=self.agents_config["report_writer"],
             tools=[report_formatting_tool],
         )
 
+    # ===== กำหนด Tasks (งานที่ต้องทำ) =====
+
     @task
     def collect_and_validate_data(self) -> Task:
-        """Data collection and validation task."""
+        """งานที่ 1: รวบรวมและตรวจสอบคุณภาพข้อมูล"""
         return Task(config=self.tasks_config["collect_and_validate_data"])
 
     @task
     def analyze_and_engineer_features(self) -> Task:
-        """Feature engineering task."""
+        """งานที่ 2: วิเคราะห์ข้อมูลและสร้าง features"""
         return Task(config=self.tasks_config["analyze_and_engineer_features"])
 
     @task
     def train_and_evaluate_model(self) -> Task:
-        """Model training and evaluation task."""
+        """งานที่ 3: ฝึกและประเมินโมเดล ML"""
         return Task(config=self.tasks_config["train_and_evaluate_model"])
 
     @task
     def generate_risk_maps(self) -> Task:
-        """Risk map generation task."""
+        """งานที่ 4: สร้างแผนที่ความเสี่ยงไฟป่า"""
         return Task(config=self.tasks_config["generate_risk_maps"])
 
     @task
     def write_research_report(self) -> Task:
-        """Research report writing task."""
+        """งานที่ 5: เขียนรายงานวิจัย"""
         return Task(config=self.tasks_config["write_research_report"])
+
+    # ===== ประกอบ Crew (ทีม) =====
 
     @crew
     def crew(self) -> Crew:
-        """Assemble the Wildfire Prediction Crew."""
+        """ประกอบทีมพยากรณ์ไฟป่า — รันแบบ sequential (ทีละงานตามลำดับ)"""
         return Crew(
-            agents=self.agents,
-            tasks=self.tasks,
-            process=Process.sequential,
-            verbose=True,
+            agents=self.agents,    # Agent ทั้ง 5 ตัว
+            tasks=self.tasks,      # งานทั้ง 5 งาน
+            process=Process.sequential,  # ทำงานตามลำดับ
+            verbose=True,          # แสดงรายละเอียดระหว่างทำงาน
         )

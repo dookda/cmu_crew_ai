@@ -1,4 +1,4 @@
-"""Map and visualization generation tool for wildfire risk assessment."""
+"""เครื่องมือสร้างแผนที่และ visualization สำหรับประเมินความเสี่ยงไฟป่า"""
 
 import os
 from typing import Any
@@ -11,7 +11,7 @@ import pandas as pd
 from crewai.tools import tool
 
 
-# Northern Thailand province data with coordinates and historical risk levels
+# ข้อมูลจังหวัดภาคเหนือ พร้อมพิกัดและระดับความเสี่ยงจากข้อมูลย้อนหลัง
 NORTHERN_PROVINCES = {
     "Chiang Mai": {"lat": 18.7883, "lon": 98.9853, "risk": "Critical", "avg_hotspots": 450},
     "Chiang Rai": {"lat": 19.9105, "lon": 99.8406, "risk": "High", "avg_hotspots": 320},
@@ -24,30 +24,24 @@ NORTHERN_PROVINCES = {
     "Uttaradit": {"lat": 17.6200, "lon": 100.0993, "risk": "Low", "avg_hotspots": 100},
 }
 
-RISK_COLORS = {
-    "Critical": "red",
-    "High": "orange",
-    "Medium": "orange",  # folium doesn't have yellow markers, use beige below
-    "Low": "green",
-}
-
+# สีของ marker ตามระดับความเสี่ยง
 RISK_ICON_COLORS = {
-    "Critical": "red",
-    "High": "orange",
-    "Medium": "beige",
-    "Low": "green",
+    "Critical": "red",      # วิกฤต
+    "High": "orange",       # สูง
+    "Medium": "beige",      # ปานกลาง
+    "Low": "green",         # ต่ำ
 }
 
 
 @tool("map_generator_tool")
 def map_generator_tool(processed_csv_path: str) -> str:
-    """Generate fire risk maps and visualizations for Northern Thailand provinces.
+    """สร้างแผนที่ความเสี่ยงไฟป่าและ visualizations สำหรับจังหวัดภาคเหนือ
 
     Args:
-        processed_csv_path: Path to the processed features CSV file.
+        processed_csv_path: พาธไปยังไฟล์ CSV ที่ประมวลผลแล้ว
 
     Returns:
-        Summary of generated visualizations with file paths.
+        สรุป visualizations ที่สร้างทั้งหมดพร้อมพาธไฟล์
     """
     try:
         os.makedirs("output", exist_ok=True)
@@ -55,7 +49,7 @@ def map_generator_tool(processed_csv_path: str) -> str:
 
         generated_files = []
 
-        # --- 1. Time series plot ---
+        # --- 1. กราฟอนุกรมเวลา (Time series plot) ---
         fig, ax = plt.subplots(figsize=(14, 5))
         ax.plot(df["date"], df["hotspot_count"], "b-", linewidth=1.2, label="Hotspot Count")
         ax.fill_between(df["date"], df["hotspot_count"], alpha=0.2, color="blue")
@@ -70,15 +64,15 @@ def map_generator_tool(processed_csv_path: str) -> str:
         plt.close(fig)
         generated_files.append(ts_path)
 
-        # --- 2. Monthly heatmap (month x year) ---
+        # --- 2. Heatmap รายเดือน (เดือน x ปี) ---
         df["year"] = df["date"].dt.year
         df["month_num"] = df["date"].dt.month
         pivot = df.pivot_table(
             values="hotspot_count", index="month_num", columns="year", aggfunc="mean"
         )
         month_labels = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+            "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+            "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
         ]
 
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -102,11 +96,13 @@ def map_generator_tool(processed_csv_path: str) -> str:
         plt.close(fig)
         generated_files.append(heatmap_path)
 
-        # --- 3. Interactive Folium map ---
+        # --- 3. แผนที่ Interactive ด้วย Folium ---
         import folium
 
+        # สร้างแผนที่ศูนย์กลางภาคเหนือ
         m = folium.Map(location=[18.8, 99.0], zoom_start=7, tiles="OpenStreetMap")
 
+        # วาง marker สำหรับแต่ละจังหวัด
         for province, info in NORTHERN_PROVINCES.items():
             risk = info["risk"]
             color = RISK_ICON_COLORS[risk]
@@ -115,10 +111,10 @@ def map_generator_tool(processed_csv_path: str) -> str:
             <div style="font-family: Arial; width: 200px;">
                 <h4 style="margin: 0;">{province}</h4>
                 <hr style="margin: 4px 0;">
-                <b>Risk Level:</b> {risk}<br>
-                <b>Avg Monthly Hotspots:</b> {info['avg_hotspots']}<br>
-                <b>Lat:</b> {info['lat']:.4f}<br>
-                <b>Lon:</b> {info['lon']:.4f}
+                <b>ระดับความเสี่ยง:</b> {risk}<br>
+                <b>จุดความร้อนเฉลี่ย/เดือน:</b> {info['avg_hotspots']}<br>
+                <b>ละติจูด:</b> {info['lat']:.4f}<br>
+                <b>ลองจิจูด:</b> {info['lon']:.4f}
             </div>
             """
 
@@ -129,20 +125,20 @@ def map_generator_tool(processed_csv_path: str) -> str:
                 icon=folium.Icon(color=color, icon="fire", prefix="fa"),
             ).add_to(m)
 
-        # Add legend
+        # เพิ่มคำอธิบายสัญลักษณ์ (Legend)
         legend_html = """
         <div style="position: fixed; bottom: 30px; left: 30px; z-index: 9999;
                     background: white; padding: 12px; border-radius: 5px;
                     border: 2px solid grey; font-family: Arial;">
-            <h4 style="margin: 0 0 8px 0;">Fire Risk Level</h4>
+            <h4 style="margin: 0 0 8px 0;">ระดับความเสี่ยงไฟป่า</h4>
             <i style="background:red; width:12px; height:12px; display:inline-block;
-               border-radius:50%;"></i> Critical<br>
+               border-radius:50%;"></i> วิกฤต (Critical)<br>
             <i style="background:orange; width:12px; height:12px; display:inline-block;
-               border-radius:50%;"></i> High<br>
+               border-radius:50%;"></i> สูง (High)<br>
             <i style="background:#F0E68C; width:12px; height:12px; display:inline-block;
-               border-radius:50%;"></i> Medium<br>
+               border-radius:50%;"></i> ปานกลาง (Medium)<br>
             <i style="background:green; width:12px; height:12px; display:inline-block;
-               border-radius:50%;"></i> Low
+               border-radius:50%;"></i> ต่ำ (Low)
         </div>
         """
         m.get_root().html.add_child(folium.Element(legend_html))
@@ -151,23 +147,23 @@ def map_generator_tool(processed_csv_path: str) -> str:
         m.save(map_path)
         generated_files.append(map_path)
 
-        # --- Report ---
+        # --- สร้างรายงาน ---
         report_lines = [
             "=" * 60,
-            "VISUALIZATION REPORT",
+            "รายงาน Visualizations (VISUALIZATION REPORT)",
             "=" * 60,
             "",
-            "Generated files:",
-            f"  1. {ts_path} — Hotspot count time series (2015-2024)",
-            f"  2. {heatmap_path} — Monthly intensity heatmap (Month x Year)",
-            f"  3. {map_path} — Interactive fire risk map with 9 Northern Thai provinces",
+            "ไฟล์ที่สร้าง:",
+            f"  1. {ts_path} — กราฟอนุกรมเวลาจุดความร้อน (2015-2024)",
+            f"  2. {heatmap_path} — Heatmap ความเข้มจุดความร้อนรายเดือน (เดือน x ปี)",
+            f"  3. {map_path} — แผนที่ interactive ความเสี่ยงไฟป่า 9 จังหวัดภาคเหนือ",
             "",
-            "Map details:",
-            "  - 9 provinces with color-coded risk markers",
-            "  - Province risk levels:",
+            "รายละเอียดแผนที่:",
+            "  - 9 จังหวัด พร้อม marker แสดงระดับความเสี่ยง",
+            "  - ระดับความเสี่ยงแต่ละจังหวัด:",
         ]
         for province, info in NORTHERN_PROVINCES.items():
-            report_lines.append(f"    {province}: {info['risk']} ({info['avg_hotspots']} avg hotspots)")
+            report_lines.append(f"    {province}: {info['risk']} (เฉลี่ย {info['avg_hotspots']} จุด/เดือน)")
         report_lines.append("")
         report_lines.append("=" * 60)
 
@@ -175,4 +171,4 @@ def map_generator_tool(processed_csv_path: str) -> str:
 
     except Exception as e:
         import traceback
-        return f"Error during map generation: {str(e)}\n{traceback.format_exc()}"
+        return f"เกิดข้อผิดพลาดระหว่างสร้างแผนที่: {str(e)}\n{traceback.format_exc()}"

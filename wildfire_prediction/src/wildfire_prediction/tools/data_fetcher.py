@@ -1,4 +1,4 @@
-"""Data fetching and validation tool for satellite-derived hotspot data."""
+"""เครื่องมือดึงข้อมูลและตรวจสอบคุณภาพข้อมูลดาวเทียมจุดความร้อน"""
 
 import os
 from typing import Any
@@ -9,57 +9,57 @@ from crewai.tools import tool
 
 @tool("data_fetcher_tool")
 def data_fetcher_tool(csv_path: str) -> str:
-    """Load CSV data and perform quality assessment including missing values, outliers, and statistics.
+    """โหลดไฟล์ CSV และตรวจสอบคุณภาพข้อมูล รวมถึง missing values, outliers, และสถิติพื้นฐาน
 
     Args:
-        csv_path: Path to the CSV file containing hotspot data.
+        csv_path: พาธไปยังไฟล์ CSV ที่มีข้อมูลจุดความร้อน
 
     Returns:
-        A formatted data quality report string.
+        รายงานคุณภาพข้อมูลในรูปแบบข้อความ
     """
     try:
         if not os.path.exists(csv_path):
-            return f"Error: File not found at {csv_path}"
+            return f"Error: ไม่พบไฟล์ที่ {csv_path}"
 
         df = pd.read_csv(csv_path, parse_dates=["date"])
 
-        # Basic info
+        # ข้อมูลพื้นฐาน
         n_rows, n_cols = df.shape
         report_lines = [
             "=" * 60,
-            "DATA QUALITY REPORT",
+            "รายงานคุณภาพข้อมูล (DATA QUALITY REPORT)",
             "=" * 60,
-            f"File: {csv_path}",
-            f"Rows: {n_rows}",
-            f"Columns: {n_cols}",
-            f"Date range: {df['date'].min()} to {df['date'].max()}",
-            f"Province(s): {', '.join(df['province'].unique())}",
+            f"ไฟล์: {csv_path}",
+            f"จำนวนแถว: {n_rows}",
+            f"จำนวนคอลัมน์: {n_cols}",
+            f"ช่วงวันที่: {df['date'].min()} ถึง {df['date'].max()}",
+            f"จังหวัด: {', '.join(df['province'].unique())}",
             "",
         ]
 
-        # Missing values
+        # ค่าที่หายไป (Missing Values)
         missing = df.isnull().sum()
-        report_lines.append("--- Missing Values ---")
+        report_lines.append("--- ค่าที่หายไป (Missing Values) ---")
         for col in df.columns:
             report_lines.append(f"  {col}: {missing[col]}")
         report_lines.append("")
 
-        # Data types
-        report_lines.append("--- Data Types ---")
+        # ชนิดข้อมูล
+        report_lines.append("--- ชนิดข้อมูล (Data Types) ---")
         for col in df.columns:
             report_lines.append(f"  {col}: {df[col].dtype}")
         report_lines.append("")
 
-        # Descriptive statistics for numeric columns
+        # สถิติเชิงพรรณนาสำหรับคอลัมน์ตัวเลข
         numeric_cols = df.select_dtypes(include=["number"]).columns
-        report_lines.append("--- Descriptive Statistics ---")
+        report_lines.append("--- สถิติเชิงพรรณนา (Descriptive Statistics) ---")
         stats = df[numeric_cols].describe().T
         stats["missing"] = df[numeric_cols].isnull().sum()
         report_lines.append(stats.to_string())
         report_lines.append("")
 
-        # Outlier detection using IQR method
-        report_lines.append("--- Outlier Detection (IQR Method) ---")
+        # ตรวจหาค่าผิดปกติด้วยวิธี IQR
+        report_lines.append("--- ตรวจหาค่าผิดปกติ (Outlier Detection - IQR Method) ---")
         total_outliers = 0
         for col in numeric_cols:
             q1 = df[col].quantile(0.25)
@@ -71,25 +71,25 @@ def data_fetcher_tool(csv_path: str) -> str:
             total_outliers += outliers
             if outliers > 0:
                 report_lines.append(
-                    f"  {col}: {outliers} outliers (range: {lower:.2f} - {upper:.2f})"
+                    f"  {col}: {outliers} ค่าผิดปกติ (ช่วง: {lower:.2f} - {upper:.2f})"
                 )
         if total_outliers == 0:
-            report_lines.append("  No outliers detected.")
+            report_lines.append("  ไม่พบค่าผิดปกติ")
         report_lines.append("")
 
-        # Duplicates
+        # แถวซ้ำ
         n_duplicates = df.duplicated().sum()
-        report_lines.append(f"Duplicate rows: {n_duplicates}")
+        report_lines.append(f"แถวซ้ำ: {n_duplicates}")
         report_lines.append("")
 
-        # Data readiness score
+        # คะแนนความพร้อมของข้อมูล
         missing_pct = df.isnull().sum().sum() / (n_rows * n_cols) * 100
         readiness = max(0, 100 - missing_pct * 10 - total_outliers * 2 - n_duplicates * 5)
         readiness = min(100, readiness)
-        report_lines.append(f"Data Readiness Score: {readiness:.0f}/100")
+        report_lines.append(f"คะแนนความพร้อมของข้อมูล: {readiness:.0f}/100")
         report_lines.append("=" * 60)
 
-        # Save report
+        # บันทึกรายงาน
         os.makedirs("output", exist_ok=True)
         report_text = "\n".join(report_lines)
         with open("output/data_quality_report.txt", "w") as f:
@@ -98,4 +98,4 @@ def data_fetcher_tool(csv_path: str) -> str:
         return report_text
 
     except Exception as e:
-        return f"Error during data validation: {str(e)}"
+        return f"เกิดข้อผิดพลาดระหว่างตรวจสอบข้อมูล: {str(e)}"

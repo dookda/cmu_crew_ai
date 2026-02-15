@@ -1,4 +1,4 @@
-"""Basic tests for the Wildfire Prediction Crew."""
+"""ทดสอบพื้นฐานสำหรับ Wildfire Prediction Crew"""
 
 import os
 
@@ -6,19 +6,19 @@ import pytest
 
 
 def test_sample_data_exists():
-    """Verify sample data file exists."""
+    """ตรวจว่าไฟล์ข้อมูลตัวอย่างมีอยู่จริง"""
     assert os.path.exists("data/sample_hotspot_data.csv")
 
 
 def test_crew_import():
-    """Verify crew can be imported."""
+    """ตรวจว่า import crew ได้สำเร็จ"""
     from wildfire_prediction.crew import WildfirePredictionCrew
     crew_instance = WildfirePredictionCrew()
     assert crew_instance is not None
 
 
 def test_tools_import():
-    """Verify all tools can be imported."""
+    """ตรวจว่า import tools ทั้งหมดได้สำเร็จ"""
     from wildfire_prediction.tools import (
         data_fetcher_tool,
         data_processor_tool,
